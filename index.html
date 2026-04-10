@@ -7,8 +7,10 @@
     <!-- 
         LIZENZ-HINWEIS:
         Dieses Werk ist lizenziert unter einer Creative Commons 
-        Namensnennung - Nicht kommerziell 4.0 International Lizenz (CC BY-NC 4.0).
-        Weitere Details unter: https://creativecommons.org/licenses/by-nc/4.0/deed.de
+        Namensnennung - Nicht kommerziell - Weitergabe unter gleichen Bedingungen 4.0 International Lizenz (CC BY-NC-SA 4.0).
+        Urheber des Originals: Herr-FR (Lizenz: CC BY-NC 4.0)
+        Änderungen & Erweiterungen: Herr-NM (Lizenz: CC BY-NC-SA 4.0)
+        Weitere Details unter: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.de
     -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -141,9 +143,6 @@
                         <button onclick="exportData()" class="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm">
                             <i data-lucide="download" class="w-4 h-4"></i> Backup (Downloads)
                         </button>
-                        <button id="btnSaveAs" onclick="saveAsData()" class="bg-blue-50 border border-blue-100 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm">
-                            <i data-lucide="save" class="w-4 h-4"></i> Speichern unter...
-                        </button>
                         <label class="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm cursor-pointer">
                             <i data-lucide="upload" class="w-4 h-4"></i> Laden
                             <input type="file" id="fileInput" accept=".json" class="hidden" onchange="importData(event)">
@@ -259,11 +258,18 @@
                 </div>
             </div>
 
-            <footer class="mt-12 pt-6 border-t border-slate-200 text-center text-slate-400 text-xs space-y-2">
+            <footer class="mt-12 pt-6 border-t border-slate-200 text-center text-slate-400 text-xs space-y-4">
                 <p>Nachschreibe-Manager &copy; 2026</p>
-                <div class="flex items-center justify-center gap-2">
-                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 rounded border border-slate-200 text-slate-600 font-medium">CC BY-NC 4.0</span>
-                    <p>Lizenziert unter CC BY-NC 4.0 (Namensnennung - Nicht kommerziell).</p>
+                <div class="max-w-2xl mx-auto space-y-2">
+                    <div class="flex items-center justify-center gap-2">
+                        <span class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 rounded border border-slate-200 text-slate-600 font-medium">CC BY-NC-SA 4.0</span>
+                    </div>
+                    <div class="text-[10px] leading-relaxed">
+                        <p class="font-semibold uppercase tracking-wider mb-1">⚖️ Lizenz & Urheberrecht</p>
+                        <p>Dieses Werk ist lizenziert unter der Lizenz <strong>CC BY-NC-SA 4.0</strong> (Creative Commons Namensnennung - Nicht kommerziell - Weitergabe unter gleichen Bedingungen).</p>
+                        <p>Urheber des Originals: <strong>Herr-FR</strong> (Lizenz: CC BY-NC 4.0)</p>
+                        <p>Der vollständige Lizenztext findet sich unter <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.de" class="underline hover:text-slate-600" target="_blank">Creative Commons</a>.</p>
+                    </div>
                 </div>
             </footer>
         </div>
@@ -457,11 +463,15 @@
         function setFilter(f) {
             currentFilter = f;
             const btns = ['btnFilterAll', 'btnFilterPending', 'btnFilterCompleted'];
-            btns.forEach(id => document.getElementById(id).className = "px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap hover:bg-slate-100 text-slate-600");
+            btns.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.className = "px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap hover:bg-slate-100 text-slate-600";
+            });
             
             const activeId = f === 'all' ? 'btnFilterAll' : (f === 'pending' ? 'btnFilterPending' : 'btnFilterCompleted');
             const activeColor = f === 'all' ? 'bg-slate-800 text-white' : (f === 'pending' ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white');
-            document.getElementById(activeId).className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeColor}`;
+            const activeEl = document.getElementById(activeId);
+            if (activeEl) activeEl.className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeColor}`;
             
             render();
         }
@@ -481,23 +491,34 @@
          */
         function updateStats() {
             const pending = records.filter(r => r.status === 'pending');
-            document.getElementById('statsPending').innerText = pending.length;
-            document.getElementById('countAll').innerText = records.length;
-            document.getElementById('countPending').innerText = pending.length;
-            document.getElementById('countCompleted').innerText = records.length - pending.length;
+            const statsPendingEl = document.getElementById('statsPending');
+            const countAllEl = document.getElementById('countAll');
+            const countPendingEl = document.getElementById('countPending');
+            const countCompletedEl = document.getElementById('countCompleted');
+            
+            if (statsPendingEl) statsPendingEl.innerText = pending.length;
+            if (countAllEl) countAllEl.innerText = records.length;
+            if (countPendingEl) countPendingEl.innerText = pending.length;
+            if (countCompletedEl) countCompletedEl.innerText = records.length - pending.length;
             
             const missingAu = pending.filter(r => !r.hasAU).length;
             const auCont = document.getElementById('statsMissingAuContainer');
-            if (missingAu > 0) {
-                auCont.classList.remove('hidden');
-                document.getElementById('statsMissingAu').innerText = missingAu;
-            } else { auCont.classList.add('hidden'); }
+            if (auCont) {
+                if (missingAu > 0) {
+                    auCont.classList.remove('hidden');
+                    const statsMissingAuEl = document.getElementById('statsMissingAu');
+                    if (statsMissingAuEl) statsMissingAuEl.innerText = missingAu;
+                } else { 
+                    auCont.classList.add('hidden'); 
+                }
+            }
         }
 
         function render() {
             if (!isLoggedIn) return;
             localStorage.setItem('nachschreibeRecords', JSON.stringify(records));
             const grid = document.getElementById('recordsGrid');
+            if (!grid) return;
             grid.innerHTML = '';
             const filtered = getProcessedRecords();
 
@@ -638,15 +659,6 @@
             a.href = u; a.download = `backup_${new Date().toISOString().split('T')[0]}.json`; a.click();
         };
 
-        window.saveAsData = async function() {
-            if (!('showSaveFilePicker' in window)) return alert("Nicht unterstützt.");
-            try {
-                const h = await window.showSaveFilePicker({ suggestedName: `nachschreiber.json`, types: [{ description: 'JSON', accept: {'application/json': ['.json']} }] });
-                const w = await h.createWritable();
-                await w.write(JSON.stringify(records, null, 2)); await w.close();
-            } catch (err) {}
-        };
-
         window.importData = function(e) {
             const f = e.target.files[0]; if (!f) return;
             const r = new FileReader();
@@ -672,7 +684,6 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            if (!('showSaveFilePicker' in window)) document.getElementById('btnSaveAs').classList.add('opacity-30', 'pointer-events-none');
         });
     </script>
 </body>

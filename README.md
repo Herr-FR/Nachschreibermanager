@@ -4,29 +4,49 @@ Ein effizientes, browserbasiertes Tool für Lehrkräfte zur Verwaltung von vers�
 
 🚀 Funktionen
 
-Schülerverwaltung: Einfaches Anlegen von Einträgen mit Name, Klasse, E-Mail und Klausurdetails.
+📥 Moodle-Teilnehmer-Import
 
-Status-Tracking: Verwalte den Status von ärztlichen Attesten (AU) und markiere, ob Ergebnisse bereits in offizielle Listen übertragen wurden.
+CSV-Schnittstelle: Importiere Teilnehmerlisten direkt aus Moodle-Exporten.
 
-E-Mail-System:
+Individuelle Auswahl: Wähle in einer Vorschau gezielt aus, welche Schüler importiert werden sollen.
 
-Einzel-Einladungen: Automatisierte E-Mails mit Platzhaltern ({{Name}}, {{Termin}}, etc.).
+Vorkonfiguration: Lege Klasse, Klausurname, Termin und AU-Status (Attest) bereits während des Imports für die gesamte Gruppe oder einzelne Personen fest.
 
-Sammel-E-Mails: Benachrichtige mehrere Schüler gleichzeitig via BCC (Datenschutzkonform).
+📧 Intelligentes E-Mail-System
 
-Anpassbare Vorlagen: Erstelle eigene Texte für Betreff und Inhalt.
+Einzel-Einladungen: Versende individualisierte E-Mails mit einem Klick.
 
-Datensicherheit & Export:
+Sammel-E-Mails: Benachrichtige mehrere ausgewählte Schüler gleichzeitig via BCC (datenschutzkonform).
 
-Passwortschutz: Sicherung der Anwendung durch ein Zugangspasswort.
+Anpassbare Vorlagen: Erstelle eigene Texte mit Platzhaltern:
 
-Lokale Speicherung: Daten werden automatisch im Browser (LocalStorage) gespeichert.
+{{Name}} – Vollständiger Name des Schülers
 
-Backups: Manueller Export/Import als JSON-Datei.
+{{Klasse}} – Klassenzugehörigkeit
 
-PDF-Übersicht: Generiere eine saubere Druckansicht der aktuellen Liste.
+{{Klausur}} – Name der verpassten Arbeit
 
-Sortierung & Filter: Filtere nach Status (Offen/Erledigt) und sortiere nach Klasse, Termin oder Klausurname.
+{{Termin}} – Datum und Uhrzeit des Nachschreibens
+
+{{AU_Status}} – Aktueller Stand des Attests
+
+🛠 Verwaltung & Bulk-Aktionen
+
+Bulk-Toolbar: Markiere mehrere Einträge, um sie gesammelt als "In Liste eingetragen" zu markieren oder Sammel-E-Mails zu versenden.
+
+Status-Tracking: Behalte den Überblick über Einladungen, Listenvermerke und Atteste.
+
+Sortierung: Ordne die Liste nach Termin, Klasse oder Klausurname.
+
+🔒 Datensicherheit & Export
+
+Passwortschutz: Sicherung des Zugangs durch ein Passwort (Standard: 0000).
+
+Lokale Speicherung: Automatische Sicherung im Browser (LocalStorage).
+
+Backup & Reset: Exportiere deine Daten als JSON-Datei oder leere die gesamte Liste (mit Sicherheitsabfrage).
+
+PDF-Export: Generiere eine saubere tabellarische Übersicht für deine Unterlagen.
 
 🛠 Installation & Nutzung
 
@@ -36,15 +56,17 @@ Lade die Datei index.html herunter.
 
 Öffne die Datei in einem modernen Webbrowser (Chrome, Edge, Firefox).
 
-Gib das Passwort ein (Standard: 0000), um den Zugriff freizuschalten.
+Gib das Passwort ein, um den Zugriff freizuschalten.
 
-Hinweis: Da die Daten lokal in deinem Browser gespeichert werden, solltest du regelmäßig die Backup-Funktion nutzen, um deine Daten zu sichern oder auf andere Geräte zu übertragen.
+Wichtiger Hinweis: Die Daten werden ausschließlich lokal in deinem Browser gespeichert. Nutze regelmäßig die Backup-Funktion, um Datenverlust vorzubeugen oder die Liste auf ein anderes Gerät zu übertragen.
 
 ⚖️ Lizenz & Urheberrecht
 
-Der Nachschreibe-Manager ist unter der Lizenz CC BY-NC 4.0 (Creative Commons Namensnennung - Nicht kommerziell) lizenziert.
+Der Nachschreibe-Manager ist unter der Lizenz CC BY-NC-SA 4.0 (Creative Commons Namensnennung - Nicht kommerziell - Weitergabe unter gleichen Bedingungen) lizenziert.
 
 Urheber des Originals: Herr-FR (Lizenz: CC BY-NC 4.0)
+
+Änderungen & Erweiterungen: Herr-NM (Lizenz: CC BY-NC-SA 4.0)
 
 Der vollständige Lizenztext findet sich unter Creative Commons.
 

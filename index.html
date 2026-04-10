@@ -13,18 +13,18 @@
         Weitere Details unter: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.de
     -->
     
-    <!-- Externe Bibliotheken über CDN (Content Delivery Network) -->
-    <script src="https://cdn.tailwindcss.com"></script> <!-- Für das moderne Design -->
-    <script src="https://unpkg.com/lucide@latest"></script> <!-- Für die Symbole (Icons) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script> <!-- PDF-Basis -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script> <!-- PDF-Tabellen -->
+    <!-- Externe Bibliotheken über CDN -->
+    <script src="https://cdn.tailwindcss.com"></script> <!-- Styling Framework -->
+    <script src="https://unpkg.com/lucide@latest"></script> <!-- Icon-Bibliothek -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script> <!-- PDF Generierung -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script> <!-- PDF Tabellen -->
 
     <style>
         /* CSS für flüssige Übergänge der Werkzeugleiste am unteren Rand */
         .sticky-toolbar {
             transition: transform 0.3s ease-in-out;
         }
-        /* Hintergrund für Modaldialoge (E-Mail Vorlagen, Moodle-Import) */
+        /* Hintergrund für Modaldialoge (E-Mail Vorlagen, Moodle-Import, Löschbestätigung) */
         .modal-overlay {
             background-color: rgba(15, 23, 42, 0.5);
             backdrop-filter: blur(4px);
@@ -48,7 +48,7 @@
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-800 font-sans pb-24">
 
-    <!-- SEKTION: LOGIN-BILDSCHIRM (Wird beim Start eingeblendet) -->
+    <!-- SEKTION: LOGIN-BILDSCHIRM -->
     <div id="loginScreen" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-100 text-center">
             <div class="inline-flex p-4 bg-blue-50 rounded-full mb-6 text-blue-600">
@@ -69,7 +69,22 @@
         </div>
     </div>
 
-    <!-- SEKTION: MOODLE IMPORT MODAL (Vorschau und Auswahl der Import-Teilnehmer) -->
+    <!-- SEKTION: LÖSCH-BESTÄTIGUNG MODAL (Sicherheitsabfrage vor "Liste leeren") -->
+    <div id="clearModal" class="fixed inset-0 z-[80] flex items-center justify-center modal-overlay hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-slate-100 text-center m-4">
+            <div class="inline-flex p-4 bg-red-50 rounded-full mb-6 text-red-600">
+                <i data-lucide="alert-triangle" class="w-10 h-10"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Liste wirklich leeren?</h2>
+            <p class="text-slate-500 mb-6 text-sm">Diese Aktion löscht alle Einträge unwiderruflich. Bitte stelle sicher, dass du zuvor ein Backup erstellt hast.</p>
+            <div class="flex gap-3">
+                <button onclick="closeClearModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-all">Abbrechen</button>
+                <button onclick="confirmClearAll()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-all text-sm">Ja, alles löschen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEKTION: MOODLE IMPORT MODAL -->
     <div id="moodleModal" class="fixed inset-0 z-[70] flex items-center justify-center modal-overlay hidden">
         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-100 m-4 flex flex-col max-h-[90vh]">
             <div class="flex justify-between items-center mb-4 shrink-0">
@@ -103,11 +118,14 @@
                     <input type="datetime-local" id="moodleImportDate" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
-                <!-- Teilnehmerauswahl nach CSV-Analyse -->
                 <div id="moodleStep2" class="hidden pt-4 border-t border-slate-100">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider">Teilnehmer wählen</h3>
-                        <button onclick="toggleAllMoodlePreview(true)" class="text-xs text-blue-600 font-semibold hover:underline">Alle auswählen</button>
+                    <div class="flex justify-between items-center mb-3 text-slate-700">
+                        <h3 class="text-sm font-bold uppercase tracking-wider">Teilnehmer wählen</h3>
+                        <div class="flex gap-3 text-xs">
+                            <button onclick="toggleAllMoodlePreview(true)" class="text-blue-600 font-semibold hover:underline">Alle wählen</button>
+                            <span class="text-slate-300">|</span>
+                            <span class="font-semibold">AU bereits abhaken?</span>
+                        </div>
                     </div>
                     <div id="moodlePreviewList" class="space-y-2 max-h-60 overflow-y-auto border border-slate-200 rounded-xl p-3 bg-slate-50 custom-scrollbar">
                         <!-- Liste wird per JS gefüllt -->
@@ -124,7 +142,7 @@
         </div>
     </div>
 
-    <!-- SEKTION: E-MAIL VORLAGEN MODAL (Betreff und Texte anpassen) -->
+    <!-- SEKTION: E-MAIL VORLAGEN MODAL -->
     <div id="templateModal" class="fixed inset-0 z-[70] flex items-center justify-center modal-overlay hidden">
         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-100 m-4 overflow-y-auto max-h-[90vh]">
             <div class="flex justify-between items-center mb-6">
@@ -170,7 +188,7 @@
         </div>
     </div>
 
-    <!-- SEKTION: BULK-AKTIONEN TOOLBAR (Sammeltasten für mehrere ausgewählte Schüler) -->
+    <!-- SEKTION: BULK-AKTIONEN TOOLBAR -->
     <div id="bulkToolbar" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 translate-y-32 sticky-toolbar">
         <div class="flex items-center gap-2 border-r border-slate-700 pr-6">
             <span id="selectedCount" class="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">0</span>
@@ -183,11 +201,10 @@
         </div>
     </div>
 
-    <!-- SEKTION: HAUPTANWENDUNG (Header, Formular und Schüler-Liste) -->
+    <!-- SEKTION: HAUPTANWENDUNG -->
     <div id="appContainer" class="p-4 md:p-8 hidden">
         <div class="max-w-6xl mx-auto space-y-8">
             
-            <!-- App Header -->
             <header class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div>
                     <h1 class="text-3xl font-bold text-slate-900 flex items-center gap-3">
@@ -198,7 +215,6 @@
                 </div>
                 
                 <div class="flex flex-col items-end gap-3 mt-4 md:mt-0 text-sm">
-                    <!-- Navigations-Buttons -->
                     <div class="flex flex-wrap justify-end gap-2">
                         <button onclick="openMoodleModal()" class="bg-orange-50 text-orange-700 px-3 py-2 rounded-lg flex items-center gap-2 font-medium border border-orange-200 hover:bg-orange-100">
                             <i data-lucide="upload-cloud" class="w-4 h-4"></i> Moodle Import
@@ -216,12 +232,15 @@
                             <i data-lucide="upload" class="w-4 h-4"></i> Laden
                             <input type="file" id="fileInput" accept=".json" class="hidden" onchange="importData(event)">
                         </label>
-                        <button onclick="logout()" class="bg-slate-100 text-slate-600 px-3 py-2 rounded-lg flex items-center gap-2 font-medium hover:bg-slate-200">
+                        <!-- NEU: Liste leeren Button -->
+                        <button onclick="openClearModal()" class="bg-red-600 text-white px-3 py-2 rounded-lg flex items-center gap-2 font-medium hover:bg-red-700 transition-colors shadow-sm">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> Liste leeren
+                        </button>
+                        <button onclick="logout()" class="bg-slate-100 text-slate-600 px-3 py-2 rounded-lg flex items-center gap-2 font-medium hover:bg-slate-200 border border-slate-200">
                             <i data-lucide="log-out" class="w-4 h-4"></i> Logout
                         </button>
                     </div>
                     
-                    <!-- Schnell-Statistik -->
                     <div class="flex gap-2 font-medium">
                         <div class="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg flex items-center gap-2"><i data-lucide="alert-circle" class="w-4 h-4"></i> <span id="statsPending">0</span> Ausstehend</div>
                         <div id="statsMissingAuContainer" class="bg-amber-50 text-amber-700 px-4 py-2 rounded-lg flex items-center gap-2 hidden"><i data-lucide="file-heart" class="w-4 h-4"></i> <span id="statsMissingAu">0</span> Ohne AU</div>
@@ -230,7 +249,6 @@
             </header>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Spalte 1: Formular zum manuellen Hinzufügen -->
                 <div class="lg:col-span-1 space-y-6">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                         <h2 id="formTitle" class="text-xl font-semibold mb-4 border-b pb-3">Neuen Termin anlegen</h2>
@@ -251,7 +269,6 @@
                     </div>
                 </div>
 
-                <!-- Spalte 2 & 3: Filterung, Sortierung und Liste -->
                 <div class="lg:col-span-2 space-y-6">
                     <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between gap-4">
                         <div class="flex items-center gap-2">
@@ -274,7 +291,6 @@
                 </div>
             </div>
 
-            <!-- Footer: Lizenz-Hinweis (Ganz unten dezent platziert) -->
             <footer class="mt-12 pt-6 border-t border-slate-200 text-center text-slate-400 text-xs space-y-4">
                 <p>Nachschreibe-Manager &copy; 2026</p>
                 <div class="max-w-2xl mx-auto space-y-2">
@@ -323,6 +339,26 @@
         let editingId = null;
 
         /**
+         * FUNKTIONEN ZUM LEEREN DER LISTE (NEU)
+         */
+        window.openClearModal = function() {
+            document.getElementById('clearModal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        window.closeClearModal = function() {
+            document.getElementById('clearModal').classList.add('hidden');
+        };
+
+        window.confirmClearAll = function() {
+            records = [];
+            selectedIds.clear();
+            updateBulkToolbar();
+            render();
+            closeClearModal();
+        };
+
+        /**
          * MOODLE IMPORT LOGIK (SCHRITT-FÜR-SCHRITT)
          */
         window.openMoodleModal = function() {
@@ -351,7 +387,6 @@
                 const lines = text.split(/\r?\n/);
                 if (lines.length < 2) return alert("Die Datei ist leer.");
 
-                // Header Spalten identifizieren (Moodle kann je nach Sprache variieren)
                 const header = lines[0].split(/[;,]/);
                 const idxFirstName = header.findIndex(h => h.toLowerCase().includes('vorname') || h.toLowerCase().includes('first name'));
                 const idxLastName = header.findIndex(h => h.toLowerCase().includes('nachname') || h.toLowerCase().includes('surname') || h.toLowerCase().includes('lastname'));
@@ -372,7 +407,7 @@
                     const email = cols[idxEmail].replace(/"/g, '').trim();
 
                     if (firstName && lastName) {
-                        moodleParsedStudents.push({ firstName, lastName, email, selected: true });
+                        moodleParsedStudents.push({ firstName, lastName, email, selected: true, hasAU: false });
                     }
                 }
                 renderMoodlePreview();
@@ -396,10 +431,16 @@
                     const item = document.createElement('div');
                     item.className = "flex items-center gap-3 p-2 hover:bg-white rounded-lg transition-colors";
                     item.innerHTML = `
-                        <input type="checkbox" id="m_p_${index}" ${student.selected ? 'checked' : ''} onchange="toggleMoodleS(${index})" class="w-4 h-4 rounded cursor-pointer">
-                        <label for="m_p_${index}" class="text-sm font-medium cursor-pointer flex-1">
-                            ${student.firstName} ${student.lastName} <span class="text-[10px] text-slate-400">(${student.email})</span>
-                        </label>
+                        <div class="flex items-center gap-3 flex-1">
+                            <input type="checkbox" id="m_p_${index}" ${student.selected ? 'checked' : ''} onchange="toggleMoodleS(${index})" class="w-4 h-4 rounded cursor-pointer">
+                            <label for="m_p_${index}" class="text-sm font-medium cursor-pointer flex-1">
+                                ${student.firstName} ${student.lastName} <span class="text-[10px] text-slate-400">(${student.email})</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center gap-2 px-3 border-l border-slate-200">
+                             <input type="checkbox" id="m_au_${index}" ${student.hasAU ? 'checked' : ''} onchange="toggleMoodleAU(${index})" class="w-4 h-4 text-emerald-600 rounded cursor-pointer">
+                             <label for="m_au_${index}" class="text-[10px] font-bold text-slate-500 uppercase cursor-pointer">AU</label>
+                        </div>
                     `;
                     listContainer.appendChild(item);
                 });
@@ -407,9 +448,9 @@
         }
 
         window.toggleMoodleS = i => moodleParsedStudents[i].selected = !moodleParsedStudents[i].selected;
+        window.toggleMoodleAU = i => moodleParsedStudents[i].hasAU = !moodleParsedStudents[i].hasAU;
         window.toggleAllMoodlePreview = val => { moodleParsedStudents.forEach(s => s.selected = val); renderMoodlePreview(); };
 
-        // Fügt die ausgewählten Moodle-Schüler der Hauptliste hinzu
         window.confirmMoodleImport = function() {
             const targetClass = document.getElementById('moodleImportClass').value;
             const targetExam = document.getElementById('moodleImportExam').value || "Import";
@@ -423,7 +464,9 @@
                 records.unshift({
                     id: crypto.randomUUID(), name: `${s.firstName} ${s.lastName}`,
                     schoolClass: targetClass, email: s.email, examName: targetExam,
-                    makeUpDate: targetDate, hasAU: false, status: 'pending',
+                    makeUpDate: targetDate, 
+                    hasAU: s.hasAU, 
+                    status: 'pending',
                     invitationSentDate: null, isListed: false
                 });
             });
@@ -539,7 +582,7 @@
         }
 
         /**
-         * RENDER-FUNKTION (Aktualisiert die komplette Oberfläche)
+         * RENDER-FUNKTION
          */
         function render() {
             if (!isLoggedIn) return;
@@ -590,7 +633,7 @@
         }
 
         /**
-         * CRUD FUNKTIONEN (Create, Read, Update, Delete)
+         * CRUD FUNKTIONEN
          */
         window.editRecord = id => {
             const r = records.find(x => x.id === id); if (!r) return;
@@ -624,7 +667,7 @@
         window.deleteRecord = id => { if (confirm('Löschen?')) { records = records.filter(r => r.id !== id); selectedIds.delete(id); updateBulkToolbar(); render(); } };
 
         /**
-         * DATEN-EXPORT (JSON, PDF) & IMPORT
+         * DATEN-EXPORT & IMPORT
          */
         window.exportData = () => {
             const b = new Blob([JSON.stringify(records, null, 2)], { type: "application/json" });

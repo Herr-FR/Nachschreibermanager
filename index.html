@@ -10,18 +10,24 @@
         Namensnennung - Nicht kommerziell 4.0 International Lizenz (CC BY-NC 4.0).
         Weitere Details unter: https://creativecommons.org/licenses/by-nc/4.0/deed.de
     -->
-    <!-- Tailwind CSS: Ein Framework für schnelles Styling direkt über Klassen -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons: Eine Bibliothek für die Symbole (Icons) in der App -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- jsPDF & AutoTable: Bibliotheken, um aus Tabellendaten ein PDF-Dokument zu erzeugen -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        .sticky-toolbar {
+            transition: transform 0.3s ease-in-out;
+        }
+        .modal-overlay {
+            background-color: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+        }
+    </style>
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-800 font-sans">
+<body class="min-h-screen bg-slate-50 text-slate-800 font-sans pb-24">
 
     <!-- SEKTION: LOGIN-BILDSCHIRM -->
-    <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+    <div id="loginScreen" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-100 text-center">
             <div class="inline-flex p-4 bg-blue-50 rounded-full mb-6 text-blue-600">
                 <i data-lucide="lock" class="w-10 h-10"></i>
@@ -41,11 +47,80 @@
         </div>
     </div>
 
-    <!-- SEKTION: HAUPTANWENDUNG (Standardmäßig versteckt) -->
+    <!-- SEKTION: E-MAIL VORLAGEN MODAL -->
+    <div id="templateModal" class="fixed inset-0 z-[70] flex items-center justify-center modal-overlay hidden">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-100 m-4 overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="settings-2" class="text-blue-600"></i>
+                    E-Mail Vorlagen anpassen
+                </h2>
+                <button onclick="closeTemplateModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Betreff (Einzel-E-Mail)</label>
+                    <input type="text" id="templateSubject" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Nachricht (Einzel-E-Mail)</label>
+                    <textarea id="templateBody" rows="8" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"></textarea>
+                    <div class="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Verfügbare Platzhalter:</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-600 font-mono">{{Name}}</span>
+                            <span class="px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-600 font-mono">{{Klasse}}</span>
+                            <span class="px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-600 font-mono">{{Klausur}}</span>
+                            <span class="px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-600 font-mono">{{Termin}}</span>
+                            <span class="px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-600 font-mono">{{AU_Status}}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Text für Sammel-E-Mail (Allgemein)</label>
+                    <textarea id="templateBulkBody" rows="4" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none" placeholder="Allgemeine Nachricht für mehrere Personen..."></textarea>
+                    <p class="text-[10px] text-slate-400 mt-1 italic">Hinweis: Platzhalter funktionieren nur bei Einzel-E-Mails.</p>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button onclick="saveTemplates()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="check" class="w-5 h-5"></i> Vorlagen speichern
+                    </button>
+                    <button onclick="resetTemplatesToDefault()" class="px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-all" title="Auf Standard zurücksetzen">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEKTION: BULK-AKTIONEN TOOLBAR (Erscheint nur bei Auswahl) -->
+    <div id="bulkToolbar" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 translate-y-32 sticky-toolbar">
+        <div class="flex items-center gap-2 border-r border-slate-700 pr-6">
+            <span id="selectedCount" class="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">0</span>
+            <span class="text-sm font-medium">ausgewählt</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="sendBulkEmail()" class="flex items-center gap-2 hover:text-blue-400 transition-colors text-sm font-medium">
+                <i data-lucide="mails" class="w-5 h-5"></i> Sammel-Email
+            </button>
+            <button onclick="markSelectedAsListed()" class="flex items-center gap-2 hover:text-purple-400 transition-colors text-sm font-medium">
+                <i data-lucide="clipboard-check" class="w-5 h-5"></i> In Liste vermerken
+            </button>
+            <button onclick="clearSelection()" class="flex items-center gap-2 hover:text-red-400 transition-colors text-sm font-medium ml-4">
+                <i data-lucide="x" class="w-5 h-5"></i> Auswahl aufheben
+            </button>
+        </div>
+    </div>
+
+    <!-- SEKTION: HAUPTANWENDUNG -->
     <div id="appContainer" class="p-4 md:p-8 hidden">
         <div class="max-w-6xl mx-auto space-y-8">
             
-            <!-- SEKTION: HEADER (Titel und globale Aktionen wie PDF, Backup, Laden) -->
             <header class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div>
                     <h1 class="text-3xl font-bold text-slate-900 flex items-center gap-3">
@@ -55,33 +130,29 @@
                     <p class="text-slate-500 mt-2">Behalte den Überblick über alle fehlenden Klassenarbeiten.</p>
                 </div>
                 
-                <!-- Schaltflächen für Datenexport und Import -->
                 <div class="flex flex-col items-end gap-3 mt-4 md:mt-0 text-sm">
                     <div class="flex flex-wrap justify-end gap-2">
-                        <!-- PDF Export Button -->
-                        <button onclick="exportPDF()" title="Aktuelle Ansicht als PDF speichern" class="bg-red-50 border border-red-100 text-red-700 hover:bg-red-100 px-3 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm">
+                        <button onclick="openTemplateModal()" class="bg-slate-800 text-white px-3 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm hover:bg-slate-700">
+                            <i data-lucide="mail-plus" class="w-4 h-4"></i> E-Mail Vorlage
+                        </button>
+                        <button onclick="exportPDF()" class="bg-red-50 border border-red-100 text-red-700 hover:bg-red-100 px-3 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm">
                             <i data-lucide="file-text" class="w-4 h-4"></i> PDF Übersicht
                         </button>
-                        <!-- Standard Backup (Downloads Ordner) -->
-                        <button onclick="exportData()" title="In Standard-Download-Ordner speichern" class="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm">
+                        <button onclick="exportData()" class="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm">
                             <i data-lucide="download" class="w-4 h-4"></i> Backup (Downloads)
                         </button>
-                        <!-- Speichern unter (Freie Wahl des Speicherorts) -->
-                        <button id="btnSaveAs" onclick="saveAsData()" title="Speicherort manuell wählen" class="bg-blue-50 border border-blue-100 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm">
+                        <button id="btnSaveAs" onclick="saveAsData()" class="bg-blue-50 border border-blue-100 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm">
                             <i data-lucide="save" class="w-4 h-4"></i> Speichern unter...
                         </button>
-                        <!-- Laden Button (Verstecktes File-Input) -->
                         <label class="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm cursor-pointer">
                             <i data-lucide="upload" class="w-4 h-4"></i> Laden
                             <input type="file" id="fileInput" accept=".json" class="hidden" onchange="importData(event)">
                         </label>
-                        <!-- Logout Button -->
                         <button onclick="logout()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm">
                             <i data-lucide="log-out" class="w-4 h-4"></i> Logout
                         </button>
                     </div>
                     
-                    <!-- Statistische Kurzinfos (Ausstehend, Fehlende AU) -->
                     <div class="flex gap-2">
                         <div class="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg flex items-center gap-2 font-medium">
                             <i data-lucide="alert-circle" class="w-4 h-4"></i>
@@ -97,53 +168,41 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
-                <!-- SEKTION: FORMULAR (Links - Zum Hinzufügen oder Bearbeiten von Einträgen) -->
+                <!-- FORMULAR -->
                 <div class="lg:col-span-1 space-y-6">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                         <h2 id="formTitle" class="text-xl font-semibold mb-4 text-slate-800 border-b pb-3">Neuen Termin anlegen</h2>
-                        
                         <form id="addForm" class="space-y-4">
-                            <!-- Input für den Namen -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-2">
                                     <i data-lucide="user" class="w-4 h-4"></i> Name des Schülers
                                 </label>
                                 <input type="text" id="inputName" required class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="z.B. Anna Schmidt">
                             </div>
-
-                            <!-- Input für die Klasse -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-2">
                                     <i data-lucide="users" class="w-4 h-4"></i> Klasse
                                 </label>
                                 <input type="text" id="inputClass" required class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="z.B. 10a, Q1">
                             </div>
-
-                            <!-- Input für E-Mail -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-2">
                                     <i data-lucide="mail" class="w-4 h-4"></i> E-Mail Adresse
                                 </label>
                                 <input type="email" id="inputEmail" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="schueler@email.de">
                             </div>
-
-                            <!-- Input für die Klausur -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-2">
                                     <i data-lucide="book-open" class="w-4 h-4"></i> Verpasste Klassenarbeit
                                 </label>
                                 <input type="text" id="inputExam" required class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="z.B. Englisch Vokabeltest">
                             </div>
-
-                            <!-- Input für den Termin -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-2">
                                     <i data-lucide="calendar" class="w-4 h-4"></i> Nachschreibetermin
                                 </label>
                                 <input type="datetime-local" id="inputDate" required class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
                             </div>
-
-                            <!-- Checkbox für AU -->
                             <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
                                 <input type="checkbox" id="inputAU" class="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer">
                                 <label for="inputAU" class="text-sm font-medium text-slate-700 cursor-pointer flex items-center gap-2">
@@ -151,8 +210,6 @@
                                     AU (Attest) liegt bereits vor
                                 </label>
                             </div>
-
-                            <!-- Buttons für Submit und Abbrechen (Bearbeitungsmodus) -->
                             <div class="flex gap-2 mt-4">
                                 <button type="submit" id="submitBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-sm">
                                     Eintrag hinzufügen
@@ -165,13 +222,10 @@
                     </div>
                 </div>
 
-                <!-- SEKTION: LISTENANSICHT (Rechts - Filter, Sortierung und Schüler-Karten) -->
+                <!-- LISTENANSICHT -->
                 <div class="lg:col-span-2 space-y-6">
-                    
-                    <!-- Toolbar: Filterung und Sortierung -->
                     <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <!-- Status-Filter (Tabs) -->
-                        <div class="flex gap-2 overflow-x-auto w-full sm:w-auto">
+                        <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
                             <button onclick="setFilter('all')" id="btnFilterAll" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap bg-slate-800 text-white">
                                 Alle (<span id="countAll">0</span>)
                             </button>
@@ -181,14 +235,17 @@
                             <button onclick="setFilter('completed')" id="btnFilterCompleted" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap hover:bg-emerald-50 text-emerald-700">
                                 Erledigt (<span id="countCompleted">0</span>)
                             </button>
+                            <div class="h-6 w-px bg-slate-200 mx-2 hidden sm:block"></div>
+                            <button onclick="selectAllVisible()" class="text-sm text-slate-500 hover:text-blue-600 font-medium whitespace-nowrap px-2">
+                                Alle auswählen
+                            </button>
                         </div>
 
-                        <!-- Dropdown für die Sortierung -->
                         <div class="flex items-center gap-2 w-full sm:w-auto text-sm">
                             <label for="sortSelect" class="text-slate-500 font-medium flex items-center gap-1.5 whitespace-nowrap">
                                 <i data-lucide="arrow-up-down" class="w-4 h-4"></i> Sortieren:
                             </label>
-                            <select id="sortSelect" onchange="setSort(this.value)" class="bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-auto cursor-pointer">
+                            <select id="sortSelect" onchange="setSort(this.value)" class="bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-3 py-1.5 outline-none w-full sm:w-auto cursor-pointer">
                                 <option value="date">Nach Termin (frühste zuerst)</option>
                                 <option value="class">Nach Klasse (A-Z)</option>
                                 <option value="exam">Nach Klausur (A-Z)</option>
@@ -196,270 +253,330 @@
                         </div>
                     </div>
 
-                    <!-- Raster für die Schüler-Karten -->
                     <div id="recordsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Die Karten werden dynamisch via JavaScript hier eingefügt -->
+                        <!-- Karten -->
                     </div>
                 </div>
-
             </div>
 
-            <!-- SEKTION: FOOTER (Lizenz-Hinweis) -->
             <footer class="mt-12 pt-6 border-t border-slate-200 text-center text-slate-400 text-xs space-y-2">
                 <p>Nachschreibe-Manager &copy; 2026</p>
                 <div class="flex items-center justify-center gap-2">
-                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 rounded border border-slate-200 text-slate-600 font-medium">
-                        CC BY-NC 4.0
-                    </span>
-                    <p>Dieses Werk ist lizenziert unter CC BY-NC 4.0 (Namensnennung - Nicht kommerziell).</p>
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 rounded border border-slate-200 text-slate-600 font-medium">CC BY-NC 4.0</span>
+                    <p>Lizenziert unter CC BY-NC 4.0 (Namensnennung - Nicht kommerziell).</p>
                 </div>
             </footer>
         </div>
     </div>
 
-    <!-- LOGIK: JAVASCRIPT -->
     <script>
         /**
          * SICHERHEITSEINSTELLUNGEN
-         * Ändere hier das Passwort für den Zugang.
          */
-        const APP_PASSWORD = "!TeamKIT!"; // Standardpasswort (bitte ändern)
+        const APP_PASSWORD = "0000"; 
 
         /**
-         * GLOBALER ZUSTAND (State)
-         * Hier liegen alle Daten der App während sie läuft.
+         * STANDARD E-MAIL VORLAGEN
+         */
+        const DEFAULT_TEMPLATES = {
+            subject: "Einladung zum Nachschreiben: {{Klausur}}",
+            body: "Hallo {{Name}},\n\ndu hast die Klassenarbeit \"{{Klausur}}\" verpasst. \n\nDein Nachschreibetermin ist am {{Termin}} Uhr.\nBitte sei pünktlich und melde dich bei Rückfragen.\n\n{{AU_Status}}\n\nViele Grüße",
+            bulkBody: "Hallo zusammen,\n\ndies ist eine Sammelbenachrichtigung bezüglich eurer anstehenden Nachschreibetermine. Details entnehmt bitte dem Nachschreibe-Manager oder eurer individuellen Einladung.\n\nBeste Grüße"
+        };
+
+        /**
+         * GLOBALER ZUSTAND
          */
         let records = [];
+        let selectedIds = new Set();
         let isLoggedIn = false;
+        let emailTemplates = { ...DEFAULT_TEMPLATES };
         
-        // Auto-Load: Daten aus dem Browserspeicher (LocalStorage) beim Start laden
+        // Auto-Load: Daten aus dem Browserspeicher
         const savedData = localStorage.getItem('nachschreibeRecords');
         if (savedData) {
-            try {
-                records = JSON.parse(savedData);
-            } catch (e) {
-                console.error("Fehler beim Laden der lokalen Daten", e);
-                records = [];
-            }
+            try { records = JSON.parse(savedData); } catch (e) { records = []; }
+        }
+
+        const savedTemplates = localStorage.getItem('nachschreibeTemplates');
+        if (savedTemplates) {
+            try { emailTemplates = JSON.parse(savedTemplates); } catch (e) { emailTemplates = { ...DEFAULT_TEMPLATES }; }
         }
         
-        let currentFilter = 'all'; // 'all', 'pending', 'completed'
-        let currentSort = 'date';  // 'date', 'class', 'exam'
-        let editingId = null;      // Speichert die ID des Eintrags, der gerade bearbeitet wird
+        let currentFilter = 'all';
+        let currentSort = 'date';
+        let editingId = null;
 
         /**
-         * FUNKTION: Login verarbeiten
+         * LOGIN / LOGOUT
          */
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const input = document.getElementById('passwordInput').value;
-            const error = document.getElementById('loginError');
-
             if (input === APP_PASSWORD) {
                 isLoggedIn = true;
-                error.classList.add('hidden');
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('appContainer').classList.remove('hidden');
                 render();
             } else {
-                error.classList.remove('hidden');
+                document.getElementById('loginError').classList.remove('hidden');
                 document.getElementById('passwordInput').value = '';
-                document.getElementById('passwordInput').focus();
             }
         });
 
-        /**
-         * FUNKTION: Logout
-         */
         window.logout = function() {
             isLoggedIn = false;
-            document.getElementById('passwordInput').value = '';
             document.getElementById('loginScreen').classList.remove('hidden');
             document.getElementById('appContainer').classList.add('hidden');
-            document.getElementById('loginError').classList.add('hidden');
         };
 
         /**
-         * FUNKTION: Sortierung ändern
+         * VORLAGEN VERWALTUNG
          */
-        function setSort(sortValue) {
-            currentSort = sortValue;
-            render();
-        }
+        window.openTemplateModal = function() {
+            document.getElementById('templateSubject').value = emailTemplates.subject;
+            document.getElementById('templateBody').value = emailTemplates.body;
+            document.getElementById('templateBulkBody').value = emailTemplates.bulkBody;
+            document.getElementById('templateModal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        window.closeTemplateModal = function() {
+            document.getElementById('templateModal').classList.add('hidden');
+        };
+
+        window.saveTemplates = function() {
+            emailTemplates = {
+                subject: document.getElementById('templateSubject').value,
+                body: document.getElementById('templateBody').value,
+                bulkBody: document.getElementById('templateBulkBody').value
+            };
+            localStorage.setItem('nachschreibeTemplates', JSON.stringify(emailTemplates));
+            closeTemplateModal();
+            alert("Vorlagen erfolgreich gespeichert!");
+        };
+
+        window.resetTemplatesToDefault = function() {
+            if(confirm("Vorlagen auf Standard zurücksetzen?")) {
+                emailTemplates = { ...DEFAULT_TEMPLATES };
+                document.getElementById('templateSubject').value = emailTemplates.subject;
+                document.getElementById('templateBody').value = emailTemplates.body;
+                document.getElementById('templateBulkBody').value = emailTemplates.bulkBody;
+            }
+        };
 
         /**
-         * FUNKTION: Filter ändern und UI-Buttons anpassen
+         * AUSWAHL-LOGIK
          */
-        function setFilter(filter) {
-            currentFilter = filter;
-            
-            const btnAll = document.getElementById('btnFilterAll');
-            const btnPending = document.getElementById('btnFilterPending');
-            const btnCompleted = document.getElementById('btnFilterCompleted');
-            
-            // CSS Klassen für alle Buttons zurücksetzen
-            [btnAll, btnPending, btnCompleted].forEach(btn => {
-                btn.className = "px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap";
-            });
-
-            // Aktiven Button hervorheben
-            if(filter === 'all') btnAll.classList.add('bg-slate-800', 'text-white');
-            else btnAll.classList.add('hover:bg-slate-100', 'text-slate-600');
-
-            if(filter === 'pending') btnPending.classList.add('bg-blue-600', 'text-white');
-            else btnPending.classList.add('hover:bg-blue-50', 'text-blue-700');
-
-            if(filter === 'completed') btnCompleted.classList.add('bg-emerald-600', 'text-white');
-            else btnCompleted.classList.add('hover:bg-emerald-50', 'text-emerald-700');
-
-            render();
-        }
-
-        /**
-         * FUNKTION: Statistiken (Oben rechts im Header) aktualisieren
-         */
-        function updateStats() {
-            const totalPending = records.filter(r => r.status === 'pending').length;
-            const totalMissingAU = records.filter(r => r.status === 'pending' && !r.hasAU).length;
-            const totalCompleted = records.length - totalPending;
-
-            document.getElementById('statsPending').innerText = totalPending;
-            document.getElementById('countAll').innerText = records.length;
-            document.getElementById('countPending').innerText = totalPending;
-            document.getElementById('countCompleted').innerText = totalCompleted;
-
-            // Warnung nur zeigen, wenn wirklich jemand ein Attest nachreichen muss
-            const auContainer = document.getElementById('statsMissingAuContainer');
-            if (totalMissingAU > 0) {
-                auContainer.classList.remove('hidden');
-                document.getElementById('statsMissingAu').innerText = totalMissingAU;
+        window.toggleSelection = function(id) {
+            if (selectedIds.has(id)) {
+                selectedIds.delete(id);
             } else {
-                auContainer.classList.add('hidden');
+                selectedIds.add(id);
+            }
+            updateBulkToolbar();
+            render();
+        };
+
+        window.clearSelection = function() {
+            selectedIds.clear();
+            updateBulkToolbar();
+            render();
+        };
+
+        window.selectAllVisible = function() {
+            const visible = getProcessedRecords();
+            visible.forEach(r => selectedIds.add(r.id));
+            updateBulkToolbar();
+            render();
+        };
+
+        function updateBulkToolbar() {
+            const toolbar = document.getElementById('bulkToolbar');
+            const countLabel = document.getElementById('selectedCount');
+            
+            if (selectedIds.size > 0) {
+                countLabel.innerText = selectedIds.size;
+                toolbar.classList.remove('translate-y-32');
+            } else {
+                toolbar.classList.add('translate-y-32');
             }
         }
 
-        /**
-         * FUNKTION: Verarbeitet die Liste (Filtern und Sortieren) für die Anzeige
-         */
-        function getProcessedRecords() {
-            let filtered = records.filter(record => {
-                if (currentFilter === 'all') return true;
-                return record.status === currentFilter;
-            });
+        window.markSelectedAsListed = function() {
+            records = records.map(r => selectedIds.has(r.id) ? { ...r, isListed: true } : r);
+            selectedIds.clear();
+            updateBulkToolbar();
+            render();
+        };
 
+        /**
+         * E-MAIL FUNKTIONEN
+         */
+        function replacePlaceholders(text, record) {
+            const d = new Date(record.makeUpDate);
+            const dateStr = d.toLocaleDateString('de-DE') + " um " + d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
+            const auStatus = record.hasAU ? 'Dein Attest (AU) liegt uns bereits vor. Danke!' : 'Bitte denke daran, dein Attest (AU) noch nachzureichen!';
+            
+            return text
+                .replace(/{{Name}}/g, record.name)
+                .replace(/{{Klasse}}/g, record.schoolClass)
+                .replace(/{{Klausur}}/g, record.examName)
+                .replace(/{{Termin}}/g, dateStr)
+                .replace(/{{AU_Status}}/g, auStatus);
+        }
+
+        window.sendEmail = function(id) {
+            const r = records.find(rec => rec.id === id);
+            if (!r || !r.email) return;
+
+            const subject = encodeURIComponent(replacePlaceholders(emailTemplates.subject, r));
+            const body = encodeURIComponent(replacePlaceholders(emailTemplates.body, r));
+
+            window.location.href = `mailto:${r.email}?subject=${subject}&body=${body}`;
+        };
+
+        window.sendBulkEmail = function() {
+            const selectedRecords = records.filter(r => selectedIds.has(r.id) && r.email);
+            if (selectedRecords.length === 0) {
+                alert("Keine gültigen E-Mail-Adressen in der Auswahl gefunden.");
+                return;
+            }
+
+            const emails = selectedRecords.map(r => r.email).join(',');
+            const subject = encodeURIComponent("Information: Nachschreibetermine");
+            const body = encodeURIComponent(emailTemplates.bulkBody);
+
+            window.location.href = `mailto:?bcc=${emails}&subject=${subject}&body=${body}`;
+        };
+
+        /**
+         * FILTER & SORT
+         */
+        function setSort(v) { currentSort = v; render(); }
+        function setFilter(f) {
+            currentFilter = f;
+            const btns = ['btnFilterAll', 'btnFilterPending', 'btnFilterCompleted'];
+            btns.forEach(id => document.getElementById(id).className = "px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap hover:bg-slate-100 text-slate-600");
+            
+            const activeId = f === 'all' ? 'btnFilterAll' : (f === 'pending' ? 'btnFilterPending' : 'btnFilterCompleted');
+            const activeColor = f === 'all' ? 'bg-slate-800 text-white' : (f === 'pending' ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white');
+            document.getElementById(activeId).className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeColor}`;
+            
+            render();
+        }
+
+        function getProcessedRecords() {
+            let filtered = records.filter(r => currentFilter === 'all' || r.status === currentFilter);
             filtered.sort((a, b) => {
-                if (currentSort === 'class') {
-                    return a.schoolClass.localeCompare(b.schoolClass);
-                } else if (currentSort === 'exam') {
-                    return a.examName.localeCompare(b.examName);
-                } else {
-                    return new Date(a.makeUpDate) - new Date(b.makeUpDate);
-                }
+                if (currentSort === 'class') return a.schoolClass.localeCompare(b.schoolClass);
+                if (currentSort === 'exam') return a.examName.localeCompare(b.examName);
+                return new Date(a.makeUpDate) - new Date(b.makeUpDate);
             });
             return filtered;
         }
 
         /**
-         * KERN-FUNKTION: RENDER (Zeichnet die gesamte Oberfläche neu)
-         * Diese Funktion wird bei fast jeder Benutzerinteraktion aufgerufen.
+         * CRUD & RENDER
          */
+        function updateStats() {
+            const pending = records.filter(r => r.status === 'pending');
+            document.getElementById('statsPending').innerText = pending.length;
+            document.getElementById('countAll').innerText = records.length;
+            document.getElementById('countPending').innerText = pending.length;
+            document.getElementById('countCompleted').innerText = records.length - pending.length;
+            
+            const missingAu = pending.filter(r => !r.hasAU).length;
+            const auCont = document.getElementById('statsMissingAuContainer');
+            if (missingAu > 0) {
+                auCont.classList.remove('hidden');
+                document.getElementById('statsMissingAu').innerText = missingAu;
+            } else { auCont.classList.add('hidden'); }
+        }
+
         function render() {
-            if (!isLoggedIn) return; // Sicherheitssperre im JS
-
-            // 1. Auto-Save: Daten im Browserspeicher sichern
+            if (!isLoggedIn) return;
             localStorage.setItem('nachschreibeRecords', JSON.stringify(records));
-
             const grid = document.getElementById('recordsGrid');
             grid.innerHTML = '';
+            const filtered = getProcessedRecords();
 
-            const filteredRecords = getProcessedRecords();
-
-            // 2. Leere Ansicht handhaben
-            if (filteredRecords.length === 0) {
-                grid.innerHTML = `
-                    <div class="col-span-full bg-white p-12 rounded-2xl shadow-sm border border-slate-100 text-center text-slate-500">
-                        <i data-lucide="book-open" class="w-12 h-12 mx-auto text-slate-300 mb-4"></i>
-                        <p class="text-lg">Keine Einträge gefunden.</p>
-                    </div>
-                `;
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full bg-white p-12 rounded-2xl text-center text-slate-500 border border-slate-100"><i data-lucide="inbox" class="mx-auto h-12 w-12 text-slate-300 mb-4"></i><p>Keine Einträge vorhanden.</p></div>`;
             } else {
-                // 3. Karten für jeden Schüler generieren
-                filteredRecords.forEach(record => {
-                    const dateObj = new Date(record.makeUpDate);
-                    const isPast = dateObj < new Date() && record.status === 'pending';
+                filtered.forEach(r => {
+                    const d = new Date(r.makeUpDate);
+                    const isPast = d < new Date() && r.status === 'pending';
+                    const isSelected = selectedIds.has(r.id);
                     
-                    const borderClass = record.status === 'completed' 
-                        ? 'border-emerald-100 opacity-80' 
-                        : isPast ? 'border-red-200' : 'border-slate-100';
-
                     const card = document.createElement('div');
-                    card.className = `bg-white rounded-2xl shadow-sm border-2 transition-all ${borderClass}`;
+                    card.className = `bg-white rounded-2xl shadow-sm border-2 transition-all relative ${isSelected ? 'border-blue-500 ring-2 ring-blue-100 shadow-md' : (r.status === 'completed' ? 'opacity-80 border-emerald-100' : (isPast ? 'border-red-200' : 'border-slate-100'))}`;
                     
                     card.innerHTML = `
                         <div class="p-5">
                             <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 class="text-lg font-bold ${record.status === 'completed' ? 'text-slate-500 line-through' : 'text-slate-900'}">${record.name}</h3>
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${record.status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">
-                                        ${record.status === 'completed' ? 'Nachgeschrieben' : 'Ausstehend'}
-                                    </span>
+                                <div class="flex items-start gap-3">
+                                    <input type="checkbox" ${isSelected ? 'checked' : ''} onclick="toggleSelection('${r.id}')" class="mt-1 w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                                    <div>
+                                        <h3 class="text-lg font-bold ${r.status === 'completed' ? 'text-slate-400 line-through' : 'text-slate-900'}">${r.name}</h3>
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${r.status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">
+                                            ${r.status === 'completed' ? 'Erledigt' : 'Ausstehend'}
+                                        </span>
+                                    </div>
                                 </div>
-                                <button onclick="toggleAU('${record.id}')" class="p-1.5 rounded-lg border flex items-center gap-1.5 ${record.hasAU ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}">
+                                <button onclick="toggleAU('${r.id}')" class="p-1.5 rounded-lg border flex items-center gap-1.5 ${r.hasAU ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}">
                                     <i data-lucide="file-heart" class="w-4 h-4"></i>
-                                    <span class="text-xs font-bold">${record.hasAU ? 'AU ✔' : 'AU ✘'}</span>
+                                    <span class="text-xs font-bold">${r.hasAU ? 'AU ✔' : 'AU ✘'}</span>
                                 </button>
                             </div>
 
                             <div class="space-y-2 mb-6 text-sm">
-                                <div class="flex gap-2 text-slate-700"><i data-lucide="users" class="w-4 h-4 opacity-50"></i> <span><b>Klasse:</b> ${record.schoolClass}</span></div>
-                                <div class="flex gap-2 text-slate-700"><i data-lucide="book-open" class="w-4 h-4 opacity-50"></i> <span><b>Klausur:</b> ${record.examName}</span></div>
-                                <div class="flex gap-2 ${isPast ? 'text-red-600' : 'text-slate-700'}"><i data-lucide="calendar" class="w-4 h-4 opacity-50"></i> <span><b>Termin:</b> ${dateObj.toLocaleDateString('de-DE')} um ${dateObj.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'})}</span></div>
+                                <div class="flex gap-2 text-slate-700"><i data-lucide="users" class="w-4 h-4 opacity-50"></i> <span><b>Klasse:</b> ${r.schoolClass}</span></div>
+                                <div class="flex gap-2 text-slate-700"><i data-lucide="book-open" class="w-4 h-4 opacity-50"></i> <span><b>Klausur:</b> ${r.examName}</span></div>
+                                <div class="flex gap-2 ${isPast ? 'text-red-600 font-bold' : 'text-slate-700'}"><i data-lucide="calendar" class="w-4 h-4 opacity-50"></i> <span><b>Termin:</b> ${d.toLocaleDateString('de-DE')} um ${d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'})}</span></div>
                                 
                                 <div class="pt-2">
-                                    <button onclick="toggleInvitationSent('${record.id}')" class="flex items-center gap-2 p-1.5 rounded-md hover:bg-slate-50 w-full text-left transition-colors ${record.invitationSentDate ? 'text-emerald-700' : 'text-slate-500'}">
-                                        <i data-lucide="${record.invitationSentDate ? 'check-square' : 'square'}" class="w-4 h-4"></i>
-                                        <span>Einladung: ${record.invitationSentDate ? 'Verschickt am ' + new Date(record.invitationSentDate).toLocaleDateString('de-DE') : 'Noch offen'}</span>
-                                    </button>
-                                    <button onclick="toggleListed('${record.id}')" class="flex items-center gap-2 p-1.5 rounded-md hover:bg-slate-50 w-full text-left transition-colors ${record.isListed ? 'text-purple-700' : 'text-slate-500'}">
-                                        <i data-lucide="${record.isListed ? 'check-square' : 'square'}" class="w-4 h-4"></i>
-                                        <span>In Liste vermerkt</span>
-                                    </button>
+                                    <div class="flex items-center gap-2 p-1.5 rounded-md ${r.invitationSentDate ? 'text-emerald-700' : 'text-slate-400'}">
+                                        <i data-lucide="${r.invitationSentDate ? 'check-circle' : 'circle'}" class="w-4 h-4"></i>
+                                        <span class="cursor-pointer hover:underline" onclick="toggleInvitationSent('${r.id}')">Einladung: ${r.invitationSentDate ? 'Verschickt am ' + new Date(r.invitationSentDate).toLocaleDateString('de-DE') : 'Noch offen'}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 p-1.5 rounded-md ${r.isListed ? 'text-purple-700' : 'text-slate-400'}">
+                                        <i data-lucide="${r.isListed ? 'check-circle' : 'circle'}" class="w-4 h-4"></i>
+                                        <span class="cursor-pointer hover:underline" onclick="toggleListed('${r.id}')">In Liste vermerkt</span>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="flex items-center gap-2 pt-4 border-t border-slate-100">
-                                <button onclick="toggleStatus('${record.id}')" class="flex-1 px-3 py-2 rounded-lg text-sm font-medium ${record.status === 'completed' ? 'bg-slate-100' : 'bg-emerald-50 text-emerald-700'} hover:opacity-80">
-                                    ${record.status === 'completed' ? 'Wieder öffnen' : 'Erledigt'}
+                                <button onclick="toggleStatus('${r.id}')" class="flex-1 px-3 py-2 rounded-lg text-sm font-medium ${r.status === 'completed' ? 'bg-slate-100' : 'bg-emerald-50 text-emerald-700'} hover:opacity-80">
+                                    ${r.status === 'completed' ? 'Öffnen' : 'Erledigt'}
                                 </button>
-                                <button onclick="sendEmail('${record.id}')" ${!record.email ? 'disabled' : ''} class="p-2 rounded-lg bg-blue-50 text-blue-600 disabled:opacity-30"><i data-lucide="mail" class="w-5 h-5"></i></button>
-                                <button onclick="editRecord('${record.id}')" class="p-2 rounded-lg bg-amber-50 text-amber-600"><i data-lucide="pencil" class="w-5 h-5"></i></button>
-                                <button onclick="deleteRecord('${record.id}')" class="p-2 rounded-lg bg-red-50 text-red-600"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                                <button onclick="sendEmail('${r.id}')" ${!r.email ? 'disabled' : ''} class="p-2 rounded-lg bg-blue-50 text-blue-600 disabled:opacity-30"><i data-lucide="mail" class="w-5 h-5"></i></button>
+                                <button onclick="editRecord('${r.id}')" class="p-2 rounded-lg bg-amber-50 text-amber-600"><i data-lucide="pencil" class="w-5 h-5"></i></button>
+                                <button onclick="deleteRecord('${r.id}')" class="p-2 rounded-lg bg-red-50 text-red-600"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
                             </div>
                         </div>
                     `;
                     grid.appendChild(card);
                 });
             }
-
-            // UI Refresh für Icons und Statistiken
             updateStats();
             lucide.createIcons();
         }
 
         /**
-         * FUNKTION: Bearbeiten-Modus starten
+         * EDIT / CREATE
          */
         window.editRecord = function(id) {
-            const record = records.find(r => r.id === id);
-            if (!record) return;
+            const r = records.find(x => x.id === id);
+            if (!r) return;
             editingId = id;
-            document.getElementById('inputName').value = record.name;
-            document.getElementById('inputClass').value = record.schoolClass;
-            document.getElementById('inputEmail').value = record.email || '';
-            document.getElementById('inputExam').value = record.examName;
-            document.getElementById('inputDate').value = record.makeUpDate;
-            document.getElementById('inputAU').checked = record.hasAU;
-            
+            document.getElementById('inputName').value = r.name;
+            document.getElementById('inputClass').value = r.schoolClass;
+            document.getElementById('inputEmail').value = r.email || '';
+            document.getElementById('inputExam').value = r.examName;
+            document.getElementById('inputDate').value = r.makeUpDate;
+            document.getElementById('inputAU').checked = r.hasAU;
             document.getElementById('formTitle').innerText = 'Termin bearbeiten';
             document.getElementById('submitBtn').innerText = 'Änderungen speichern';
             document.getElementById('cancelEditBtn').classList.remove('hidden');
@@ -474,12 +591,9 @@
             document.getElementById('cancelEditBtn').classList.add('hidden');
         };
 
-        /**
-         * EVENT: Formular Absenden
-         */
         document.getElementById('addForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const recordData = {
+            const data = {
                 name: document.getElementById('inputName').value,
                 schoolClass: document.getElementById('inputClass').value,
                 email: document.getElementById('inputEmail').value,
@@ -489,22 +603,16 @@
             };
 
             if (editingId) {
-                records = records.map(r => r.id === editingId ? { ...r, ...recordData } : r);
+                records = records.map(x => x.id === editingId ? { ...x, ...data } : x);
             } else {
-                records.unshift({
-                    ...recordData,
-                    id: crypto.randomUUID(),
-                    status: 'pending',
-                    invitationSentDate: null,
-                    isListed: false
-                });
+                records.unshift({ ...data, id: crypto.randomUUID(), status: 'pending', invitationSentDate: null, isListed: false });
             }
-            cancelEdit(); 
+            cancelEdit();
             render();
         });
 
         /**
-         * HELFER-FUNKTIONEN: Statusänderungen
+         * HELFER
          */
         window.toggleStatus = id => { records = records.map(r => r.id === id ? { ...r, status: r.status === 'pending' ? 'completed' : 'pending' } : r); render(); };
         window.toggleAU = id => { records = records.map(r => r.id === id ? { ...r, hasAU: !r.hasAU } : r); render(); };
@@ -512,35 +620,22 @@
         window.toggleListed = id => { records = records.map(r => r.id === id ? { ...r, isListed: !r.isListed } : r); render(); };
 
         window.deleteRecord = function(id) {
-            if (confirm('Möchtest du diesen Eintrag wirklich löschen?')) {
+            if (confirm('Löschen?')) {
                 records = records.filter(r => r.id !== id);
+                selectedIds.delete(id);
+                updateBulkToolbar();
                 render();
             }
         };
 
         /**
-         * FUNKTION: E-Mail Client öffnen
-         */
-        window.sendEmail = function(id) {
-            const r = records.find(rec => rec.id === id);
-            if (!r || !r.email) return;
-            const d = new Date(r.makeUpDate);
-            const subject = encodeURIComponent(`Einladung Nachschreibetermin: ${r.examName}`);
-            const body = encodeURIComponent(`Hallo ${r.name},\n\ndein Nachschreibetermin für "${r.examName}" ist am ${d.toLocaleDateString('de-DE')} um ${d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'})} Uhr.\n\n${r.hasAU ? 'Attest liegt vor.' : 'Bitte Attest noch einreichen!'}`);
-            window.location.href = `mailto:${r.email}?subject=${subject}&body=${body}`;
-        };
-
-        /**
-         * SPEICHER-FUNKTIONEN
+         * EXPORT / IMPORT / PDF
          */
         window.exportData = function() {
-            const blob = new Blob([JSON.stringify(records, null, 2)], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
+            const b = new Blob([JSON.stringify(records, null, 2)], { type: "application/json" });
+            const u = URL.createObjectURL(b);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `nachschreiber_backup_${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
+            a.href = u; a.download = `backup_${new Date().toISOString().split('T')[0]}.json`; a.click();
         };
 
         window.saveAsData = async function() {
@@ -548,58 +643,35 @@
             try {
                 const h = await window.showSaveFilePicker({ suggestedName: `nachschreiber.json`, types: [{ description: 'JSON', accept: {'application/json': ['.json']} }] });
                 const w = await h.createWritable();
-                await w.write(JSON.stringify(records, null, 2));
-                await w.close();
-                alert("Gespeichert!");
+                await w.write(JSON.stringify(records, null, 2)); await w.close();
             } catch (err) {}
         };
 
         window.importData = function(e) {
-            const f = e.target.files[0];
-            if (!f) return;
+            const f = e.target.files[0]; if (!f) return;
             const r = new FileReader();
-            r.onload = function(ev) {
-                try {
-                    const data = JSON.parse(ev.target.result);
-                    if (Array.isArray(data)) { records = data; render(); alert("Daten geladen!"); }
-                } catch (err) { alert("Ungültige Datei."); }
-                e.target.value = '';
+            r.onload = ev => {
+                try { const d = JSON.parse(ev.target.result); if (Array.isArray(d)) { records = d; render(); } } catch (err) { alert("Fehler."); }
             };
             r.readAsText(f);
         };
 
-        /**
-         * PDF GENERIERUNG
-         */
         window.exportPDF = function() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const list = getProcessedRecords();
-            if(!list.length) return alert("Keine Daten.");
-
-            doc.setFontSize(18);
             doc.text("Nachschreibe-Übersicht", 14, 20);
-            doc.setFontSize(10);
-            doc.text(`Stand: ${new Date().toLocaleDateString('de-DE')}`, 14, 28);
-
-            const rows = list.map(r => {
-                const d = new Date(r.makeUpDate);
-                return [r.name, r.schoolClass, r.examName, d.toLocaleDateString('de-DE') + " " + d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}), r.hasAU ? "Ja" : "Nein", r.status === 'completed' ? "Erledigt" : "Offen"];
-            });
-
             doc.autoTable({
-                startY: 35,
+                startY: 25,
                 head: [['Name', 'Klasse', 'Klausur', 'Termin', 'AU', 'Status']],
-                body: rows,
+                body: list.map(r => [r.name, r.schoolClass, r.examName, new Date(r.makeUpDate).toLocaleString('de-DE'), r.hasAU?'Ja':'Nein', r.status==='completed'?'Erledigt':'Offen']),
                 headStyles: { fillColor: [37, 99, 235] }
             });
-
-            doc.save(`nachschreiber_übersicht.pdf`);
+            doc.save(`nachschreiber.pdf`);
         };
 
-        // Startpunkt der App
         document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons(); // Initial Icons für Login Screen
+            lucide.createIcons();
             if (!('showSaveFilePicker' in window)) document.getElementById('btnSaveAs').classList.add('opacity-30', 'pointer-events-none');
         });
     </script>

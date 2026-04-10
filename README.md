@@ -64,9 +64,9 @@ Wichtiger Hinweis: Die Daten werden ausschließlich lokal in deinem Browser gesp
 
 Der Nachschreibe-Manager ist unter der Lizenz CC BY-NC-SA 4.0 (Creative Commons Namensnennung - Nicht kommerziell - Weitergabe unter gleichen Bedingungen) lizenziert.
 
-Urheber des Originals: Herr-FR (Lizenz: CC BY-NC 4.0)
+Urheber des Originals: Herr-FR (Lizenz: CC BY-NC-SA 4.0)
 
-Änderungen & Erweiterungen: Herr-NM (Lizenz: CC BY-NC-SA 4.0)
+Zusammenarbeit mit Herr-NM (Lizenz: CC BY-NC-SA 4.0)
 
 Der vollständige Lizenztext findet sich unter Creative Commons.
 
